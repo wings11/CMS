@@ -16,7 +16,7 @@ class Product(models.Model):
     product_name = models.CharField(max_length=255, null=False, blank=False)
     product_image = models.JSONField(default=list)
     product_description = models.CharField(max_length=525, null=False, blank=False)
-    success = models.JSONField(default=list)
+    main_application = models.JSONField(default=list)
     benefit = models.JSONField(default=list)
     performance = models.JSONField(default=list)
     comments = models.TextField(null=True, blank=True)
@@ -38,6 +38,7 @@ class RequestForm(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     request_time = models.DateTimeField(auto_now_add=True)
     product_name = models.CharField(max_length=255, null=False, blank=False, default="Unknown")
+    auto_reply_sent = models.BooleanField(default=False)
     def __str__(self):
          return f"Request from {self.full_name} for {self.product_name}"
     

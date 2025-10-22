@@ -215,3 +215,12 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = False  # Local: False. Production: Set to True 
 SECURE_HSTS_PRELOAD = False  # Local: False. Production: Set to True to allow preloading in browsers.
 SECURE_CONTENT_TYPE_NOSNIFF = True  # Local/Production: True (always safe; prevents MIME type sniffing attacks).
 SECURE_BROWSER_XSS_FILTER = True  # Local/Production: True (always safe; enables browser XSS filtering).
+
+# Email settings for auto-reply
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # Or your provider (e.g., 'smtp.mailgun.com')
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')  
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = os.getenv('EMAIL_HOST_USER') 
