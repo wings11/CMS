@@ -45,7 +45,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'CMSapp',
-    'corsheaders',
+    'corsheaders', 
+    'chatbot',
+    'ratelimit',  # for rate limiting
 ]
 
 MIDDLEWARE = [
@@ -59,6 +61,12 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 CORS_ALLOW_ALL_ORIGINS = True
+
+# # For production, restrict CORS to your frontend domain(s) to prevent unauthorized access
+# CORS_ALLOWED_ORIGINS = [
+#     'https://yourfrontenddomain.com',  # Replace with your React app's domain
+#     'https://www.yourfrontenddomain.com',
+# ]  # Remove CORS_ALLOW_ALL_ORIGINS = True for security
 
 ROOT_URLCONF = 'CMSproject.urls'
 
@@ -83,14 +91,25 @@ WSGI_APPLICATION = 'CMSproject.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': os.getenv("DB_NAME"),
+#         'USER': os.getenv("DB_USER"),
+#         'PASSWORD': os.getenv("DB_PASSWORD"),
+#         'HOST': os.getenv("DB_HOST"),
+#         'PORT': os.getenv("DB_PORT"),
+#     }
+# }
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv("DB_NAME"),
-        'USER': os.getenv("DB_USER"),
-        'PASSWORD': os.getenv("DB_PASSWORD"),
-        'HOST': os.getenv("DB_HOST"),
-        'PORT': os.getenv("DB_PORT"),
+        'NAME': "cms",
+        'USER': "postgres",
+        'PASSWORD': "admin",
+        'HOST': "localhost",
+        'PORT': 5432,
     }
 }
 
@@ -149,3 +168,50 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS' : True,
     'BLACKLIST_AFTER_ROTATION' : True,
 }
+
+# session stored securely on server side (align with view.py 1-hour timeout)
+SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+SESSION_COOKIE_AGE = 3600 # auto reset after 1 hour
+SESSION_SAVE_EVERY_REQUEST = True # update session on every request for accuracy
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True # clear on browser close for security
+
+# cache settings (for potential future caching in views.py)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', # in-memory cache (use Redis for production)
+    }
+}
+
+# logging for chatbot security monitoring
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'WARNING',
+            'class': 'logging.FileHandler',
+            'filename': 'chatbot_security.log',
+        }, 
+    },
+    'loggers': {
+        'django': {
+            'hanlers': ['file'],
+            'level': 'WARNING',
+            'propagate': True,
+        },
+    },
+}
+
+# Store sessions in browser
+SESSION_COOKIE_SECURE = False  # Requires HTTPS in production - change True for production
+SESSION_COOKIE_HTTPONLY = True  # Prevent JS access
+SESSION_COOKIE_SAMESITE = 'Lax'  # Balance security and usability
+CSRF_COOKIE_SECURE = False  # CSRF cookie over HTTPS only - change True for production
+
+# HTTPS in production
+SECURE_SSL_REDIRECT = False  # Redirect HTTP to HTTPS (set False for local testing) - change True for production
+SECURE_HSTS_SECONDS = 0  # Local: 0 (disabled). Production: Set to 31536000 (1 year) for HTTP Strict Transport Security (prevents downgrade attacks).
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False  # Local: False. Production: Set to True to include subdomains in HSTS.
+SECURE_HSTS_PRELOAD = False  # Local: False. Production: Set to True to allow preloading in browsers.
+SECURE_CONTENT_TYPE_NOSNIFF = True  # Local/Production: True (always safe; prevents MIME type sniffing attacks).
+SECURE_BROWSER_XSS_FILTER = True  # Local/Production: True (always safe; enables browser XSS filtering).

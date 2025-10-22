@@ -1,18 +1,21 @@
 # CMS Backend (Django REST Framework)
 
 This is the backend API for **Civil Master Solution (CMS)** — a dynamic content management system where all data (products, news, projects, partners, customers, etc.) is managed by the **admin panel**.
-Public users can only view the website and submit request forms to inquire about products.
+Public users can view the website, submit request forms, and interact with an AI-powered chatbot for inquiries.
 
 ---
 
 ## Features
 
-* Built with **Django REST Framework (DRF)**
-* **PostgreSQL (Supabase)** integration for data storage
-* **JWT authentication** for secure admin access
-* **CORS enabled** for frontend integration
-* Easy **Request Form submission** for public users
-* Separate **Admin API routes** for content management
+* Built with Django REST Framework (DRF)
+* PostgreSQL (Supabase) integration for data storage
+* JWT authentication for secure admin access
+* CORS enabled for frontend integration
+* AI-Powered Chatbot with Gemini API for Q&A (English and Thai support)
+* Easy Request Form submission for public users
+* Separate Admin API routes for content management
+* Security Features: Rate limiting, honeypot detection, input validation, session management, and logging
+* Production-Ready: HTTPS support, caching, and scalability options
 
 ### 🔧 Admin can manage:
 * Partnerships  
@@ -22,19 +25,28 @@ Public users can only view the website and submit request forms to inquire about
 * Project References  
 * News 
 
+### 🤖 Chatbot Features:
+* Bilingual support (English/Thai detection and responses)
+* 50 questions per session limit, 70-word limit per question
+* 30-minute session timeout
+* Security: Rate limiting (10/min per session, 50/min per IP), honeypot for bot detection, caching for efficiency
+* Powered by Google Gemini API with concurrency control
+
 ---
 
 ## Tech Stack
 
-| Component             | Technology            |
-| --------------------- | --------------------- |
-| Backend Framework     | Django 5.2            |
-| REST API              | Django REST Framework |
-| Authentication        | JWT (SimpleJWT)       |
-| Database              | PostgreSQL (Supabase) |
-| Deployment Ready      | ✅ Yes                 |
-| Environment Variables | `.env` file           |
-| Virtual Environment   | Python `venv`         | 
+| Component             | Technology                       |
+| --------------------- | ---------------------            |
+| Backend Framework     | Django 5.2                       |
+| REST API              | Django REST Framework            |
+| Authentication        | JWT (SimpleJWT)                  |
+| Database              | PostgreSQL (Supabase)            |
+| AI Chatbot            | Google Gemini API                |
+| Security              | Rate Limiting, Honeypot, Logging |
+| Deployment Ready      | ✅ Yes                          |
+| Environment Variables | `.env` file                      |
+| Virtual Environment   | Python `venv`                    | 
 
 ---
 
@@ -81,14 +93,17 @@ password = [Your_Password]
 
 DJANGO_SECRET_KEY = [secret_key]
 DEBUG = True
-ALLOWED_HOSTS = [Your_Host]
+ALLOWED_HOSTS = [your_Host]
 
-supabase connection
+# supabase connection
 DB_NAME = postgres
 DB_USER = postgres
-DB_PASSWORD = [Your_Password]
-DB_HOST = [Your_Database_Host]
-DB_PORT = [Your_Port_Number]
+DB_PASSWORD = [your_Password]
+DB_HOST = [your_database_host]
+DB_PORT = [your_port_number]
+
+# Chatbot API
+GEMINI_API_KEY = [your_gemini_api_key]
 ```
 
 ### 6. Run migrations
@@ -122,6 +137,7 @@ python manage.py runserver
 | Project References  | `/api/projectreferences/`   | GET    |
 | News                | `/api/news/`                | GET    |
 | Django Admin Panel  | `/admin/`                   | Web UI |
+| Chatbot             | `/api/chatnot`              | POST   |
 
 ---
 
@@ -136,12 +152,20 @@ python manage.py runserver
     "contact_number": "09123456789",
     "company_name": "John company",
     "country": "Japan",
-    "product": null
+    "product_name": "Unknown",
+    "comments": "Optional comment here"
 }
 ```
 
 ---
-
+### Security Notes
+* Rate Limiting: Protects against abuse (10/min per session, 50/min per IP).
+* Honeypot: Detects bots via hidden fields.
+* Input Validation: Limits word count and sanitizes inputs.
+* Session Management: 30-minute timeouts and 50-message limits.
+* Logging: Monitors security events in chatbot_security.log.
+* Production: Enable HTTPS, use WAF (e.g., Cloudflare), and set budgets in Google Cloud for Gemini API.
+* Audit: Regularly update dependencies and scan for vulnerabilities.
 
 ##  Author
 

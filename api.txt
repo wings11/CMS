@@ -1,5 +1,9 @@
 ### API Documentation
 
+username = cms
+emai address = cms@example.com
+password = cms12345
+
 ### Public API (No Auth)
 1 - Partnership
 | Method  | Endpoint                  | Description                    |
@@ -89,3 +93,8 @@
 |   POST        | `/api/admin/news/`      | Create new news | ✅ Yes |
 |   PUT/PATCH   | `/api/admin/news/{id}/` | Update news     | ✅ Yes |
 |   DELETE      | `/api/admin/news/{id}/` | Delete news     | ✅ Yes |
+
+8 - Chatbot 
+| Method        | Endpoint                | Description     | Auth  |
+| ------------- | ----------------------- | --------------- | ----- |
+|   POST        | `/api/chatbot/`         | Gemini Chatbot  | ❌ No |

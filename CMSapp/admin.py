@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Partnership, Customership, Product, RequestForm, ProjectReference, News
+from .models import Partnership, Customership, Product, RequestForm, ProjectReference, News, Article
 
 @admin.register(Partnership)
 class PartnershipAdmin(admin.ModelAdmin):
@@ -15,7 +15,7 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(RequestForm)
 class RequestFormAdmin(admin.ModelAdmin):
-    list_display = ('full_name', 'email_address', 'contact_number', 'company_name', 'country', 'product', 'request_time')
+    list_display = ('full_name', 'email_address', 'contact_number', 'company_name', 'country', 'product_name', 'request_time')
 
 @admin.register(ProjectReference)
 class ProjectReferenceAdmin(admin.ModelAdmin):
@@ -24,4 +24,10 @@ class ProjectReferenceAdmin(admin.ModelAdmin):
 @admin.register(News)
 class NewsAdmin(admin.ModelAdmin):
     list_display = ('news_title', 'keyword', 'content', 'news_image')
+
+@admin.register(Article)
+class ArticleAdmin(admin.ModelAdmin):
+    list_display = ('article_title', 'category', 'created_at', 'updated_at')
+    list_filter = ('category', 'created_at')
+    search_fields = ('article_title', 'content', 'keyword')
 
