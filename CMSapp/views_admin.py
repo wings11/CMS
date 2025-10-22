@@ -49,7 +49,7 @@ class AdminProjectReferenceViewSet(viewsets.ModelViewSet):
         """Toggle favorite status for a project reference with max limitof 4."""
         project = self.get_object()
         if project.is_favorite: # If currently favorite, remove from favorites
-            project.s_favorite = False
+            project.is_favorite = False
             project.save()
             return Response({
                 'message': 'Removed from favorites',

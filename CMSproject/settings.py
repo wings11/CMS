@@ -105,9 +105,9 @@ WSGI_APPLICATION = 'CMSproject.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': "cms",
+        'NAME': "postgres",
         'USER': "postgres",
-        'PASSWORD': "admin",
+        'PASSWORD': "Nothing",
         'HOST': "localhost",
         'PORT': 5432,
     }

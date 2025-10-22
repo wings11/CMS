@@ -28,8 +28,8 @@ company_data = {
         'specialty': 'construction and engineering solutions',
         'services': ['design', 'supervision', 'testing', 'consultancy'],
         'products': ['Industrial Flooring', 'Pavements', 'Precast Concrete', 'DUCTIL steel fibers', 'Armour Joints', 'DELTABEAM'],
-        'note': 'You can only provide CMS information. Answer in 1-2 short sentences. If the question is not in the Q&A examples or you do not know the details, contact CMS via email cms@civilmastersolution.com or visit www.civilmastersolution.com.',
-        'contact': 'Email cms@civilmastersolution.com or visit www.civilmastersolution.com.'
+        'note': 'You can only provide CMS information. Answer in 1-2 short sentences. If the question is not in the Q&A examples or the question is not related, please only ask company related questions and else if you do not know the details which are related to the company information, contact CMS via email cms@civilmastersolution.com.',
+        'contact': 'Email cms@civilmastersolution.com.'
     },
     'th': {
         'name': 'Civil Master Solution (CMS)',
@@ -90,7 +90,7 @@ def chatbot_view(request):
 
         # Check session timeout
         current_time = time.time()
-        if current_time - request.session['last_activity'] > 3600:
+        if current_time - request.session['last_activity'] > 3600: # 1 hour
             request.session.flush()
             request.session['chat_history'] = []
             request.session['question_timestamps'] = []
