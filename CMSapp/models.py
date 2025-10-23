@@ -70,6 +70,7 @@ class Article(models.Model):
     article_image = models.JSONField(default=list)
     keyword = models.JSONField(null=True, blank=True, default=list)
     content = models.JSONField(null=False, blank=False, default=list)
+    content_html = models.TextField(null=True, blank=True)  # For Google Docs HTML content
     category = models.CharField(max_length=100, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
