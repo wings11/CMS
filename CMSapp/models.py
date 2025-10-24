@@ -67,7 +67,7 @@ class News(models.Model):
     
 class Article(models.Model):
     article_title = models.CharField(max_length=255, null=False, blank=False)
-    article_image = models.JSONField(default=list)
+    article_image = models.JSONField(default=list)  # Will store list of dicts with 'name', 'data' (base64), 'content_type'
     keyword = models.JSONField(null=True, blank=True, default=list)
     content = models.JSONField(null=False, blank=False, default=list)
     content_html = models.TextField(null=True, blank=True)  # For Google Docs HTML content

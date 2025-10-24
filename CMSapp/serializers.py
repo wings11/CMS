@@ -35,3 +35,13 @@ class ArticleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = '__all__'
+    
+    def to_representation(self, instance):
+        """Customize the representation to ensure article_image data is properly formatted."""
+        data = super().to_representation(instance)
+        
+        # Ensure article_image is always a list
+        if not isinstance(data.get('article_image'), list):
+            data['article_image'] = []
+        
+        return data
