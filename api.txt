@@ -98,3 +98,8 @@ password = cms12345
 | Method        | Endpoint                | Description     | Auth  |
 | ------------- | ----------------------- | --------------- | ----- |
 |   POST        | `/api/chatbot/`         | Gemini Chatbot  | ❌ No |
+
+9 - Security
+| Method        | Endpoint                | Description        | Auth   |
+| ------------- | ----------------------- | ---------------    | ------ |
+|   GET         | `/api/admin/security`   | Read security log  | ✅ Yes |

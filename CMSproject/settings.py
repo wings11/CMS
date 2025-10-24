@@ -175,7 +175,7 @@ CACHES = {
     }
 }
 
-# logging for chatbot security monitoring
+# logging for security monitoring
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
