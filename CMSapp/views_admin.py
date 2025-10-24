@@ -1,6 +1,6 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAdminUser
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Partnership, Customership, Product, RequestForm, ProjectReference, News, Article
 from rest_framework import status
@@ -11,6 +11,7 @@ from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import re
+import logging
 
 class AdminPartnershipViewSet(viewsets.ModelViewSet):
     queryset = Partnership.objects.all()
@@ -197,3 +198,64 @@ class AdminArticleViewSet(viewsets.ModelViewSet):
             
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class AdminLogViewSet(viewsets.ViewSet):
+    permission_classes = [IsAdminUser]
+
+    def list(self, request):
+        """
+        Admin-only API endpoint to fetch chatbot security logs and detect alerts.
+        File-based for simplicity; enhanced with pagination and error handling.
+        """
+        try:
+            log_file_path = os.path.join(settings.BASE_DIR, 'security_logs.txt')
+            
+            if not os.path.exists(log_file_path):
+                return Response({
+                    'error': 'Log file not found',
+                    'logs': [],
+                    'total_lines': 0,
+                    'alerts': []
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Read the log file
+            with open(log_file_path, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+            
+            # Pagination: Get limit from query param (default 100)
+            limit = request.GET.get('limit', 100)
+            try:
+                limit = int(limit)
+            except ValueError:
+                limit = 100
+            
+            # Get recent lines (last N, reversed for newest first)
+            recent_lines = lines[-limit:] if lines else []
+            recent_lines.reverse()
+            
+            # Safely process logs and alerts (ensure line is a string)
+            try:
+                logs = [line.strip() for line in recent_lines if isinstance(line, str)]
+                alerts = [line.strip() for line in recent_lines if isinstance(line, str) and any(keyword in line.upper() for keyword in ['ALERT', 'ERROR', 'SECURITY'])]
+            except Exception as e:
+                logging.error(f"Error processing log lines: {e}")
+                logs = []
+                alerts = []
+            
+            return Response({
+                'logs': logs,
+                'total_lines': len(lines),
+                'showing_lines': len(logs),
+                'alerts': alerts,  # For dashboard display
+                'file_path': log_file_path
+            })
+            
+        except Exception as e:
+            logging.error(f"Error reading chatbot security logs: {e}")
+            return Response({
+                'error': f'Failed to read log file: {str(e)}',
+                'logs': [],
+                'total_lines': 0,
+                'alerts': []
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
