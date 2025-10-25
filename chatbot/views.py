@@ -11,7 +11,7 @@ import google.generativeai as genai
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# Configure Gemini API
+# Configure Gemini API (ensure GEMINI_API_KEY is set in env vars)
 genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
 
 # Global lock for concurrency (limits simultaneous API calls)
@@ -90,7 +90,7 @@ def chatbot_view(request):
 
         # Check session timeout
         current_time = time.time()
-        if current_time - request.session['last_activity'] > 3600: # 1 hour
+        if current_time - request.session['last_activity'] > 3600:  # 1 hour
             request.session.flush()
             request.session['chat_history'] = []
             request.session['question_timestamps'] = []
@@ -181,7 +181,8 @@ def chatbot_view(request):
         chatbot_response = None
         with api_lock:
             try:
-                model = genai.GenerativeModel('gemini-2.5-flash')
+                # Updated model to Gemini 2.5 Flash-Lite (ensure correct name)
+                model = genai.GenerativeModel('gemini-2.5-flash-lite')  # Or 'gemini-2.5-flash-lite-001' if needed
                 response = model.generate_content(prompt)
                 chatbot_response = response.text.strip()
                 cache.set(cache_key, chatbot_response, 300)  # Cache for 5 min
