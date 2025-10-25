@@ -12,6 +12,7 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import re
 import logging
+import base64
 
 class AdminPartnershipViewSet(viewsets.ModelViewSet):
     queryset = Partnership.objects.all()
@@ -107,6 +108,10 @@ class AdminArticleViewSet(viewsets.ModelViewSet):
             keyword = request.data.get('keyword')
             category = request.data.get('category')
 
+            print(f"Received data: html_file={html_file}, images={len(images)}, title={article_title}")
+
+            print(f"Received data: html_file={html_file}, images={len(images)}, title={article_title}")
+
             if not html_file:
                 return Response({'error': 'HTML file is required'}, status=status.HTTP_400_BAD_REQUEST)
             
@@ -115,24 +120,32 @@ class AdminArticleViewSet(viewsets.ModelViewSet):
 
             # Read HTML content
             html_content = html_file.read().decode('utf-8')
+            print(f"HTML content length: {len(html_content)}")
+            print(f"HTML content length: {len(html_content)}")
             
             # Process images and update HTML
-            image_urls = []
+            image_data_list = []
             if images:
-                # Create a mapping of original filenames to new URLs
+                # Create a mapping of original filenames to data URLs for HTML replacement
                 image_map = {}
                 
                 for image in images:
-                    # Generate unique filename
-                    file_extension = os.path.splitext(image.name)[1]
-                    unique_filename = f"{uuid.uuid4()}{file_extension}"
+                    # Read image content and encode as base64
+                    image_content = image.read()
+                    encoded_image = base64.b64encode(image_content).decode('utf-8')
                     
-                    # Save image to media directory
-                    file_path = os.path.join('articles', 'images', unique_filename)
-                    saved_path = default_storage.save(file_path, ContentFile(image.read()))
+                    # Create data URL
+                    content_type = image.content_type or 'image/jpeg'
+                    data_url = f"data:{content_type};base64,{encoded_image}"
                     
-                    # Get the URL for the saved image
-                    image_url = self.request.build_absolute_uri(default_storage.url(saved_path))
+                    # Store image data in database format
+                    image_data = {
+                        'name': image.name,
+                        'data': encoded_image,
+                        'content_type': content_type,
+                        'data_url': data_url
+                    }
+                    image_data_list.append(image_data)
                     
                     # Store mapping for HTML replacement
                     # Try multiple variations of the original filename
@@ -150,13 +163,11 @@ class AdminArticleViewSet(viewsets.ModelViewSet):
                     ]
                     
                     for variation in variations:
-                        image_map[variation] = image_url
-                    
-                    image_urls.append(image_url)
+                        image_map[variation] = data_url
 
                 # Replace image src attributes in HTML
                 def replace_image_src(match):
-                    src = match.group(1)
+                    src = match.group(1)  # This is now the src value without quotes
                     
                     # Skip if already a data URL (base64) or external URL
                     if src.startswith('data:') or src.startswith('http://') or src.startswith('https://'):
@@ -178,19 +189,23 @@ class AdminArticleViewSet(viewsets.ModelViewSet):
                     
                     for name in possible_names:
                         if name in image_map:
+                            # Replace the src value in the match
                             return match.group(0).replace(src, image_map[name])
                     
                     return match.group(0)  # No replacement found
                 
             # Replace all img src attributes
-            img_pattern = r'<img[^>]+src=([^ >]+)[^>]*>'
-            html_content = re.sub(img_pattern, replace_image_src, html_content, flags=re.IGNORECASE)            # Create the article
+            img_pattern = r'<img[^>]*src=["\']([^"\']+)["\'][^>]*>'
+            html_content = re.sub(img_pattern, replace_image_src, html_content, flags=re.IGNORECASE)
+            
+            # Create the article
             article = Article.objects.create(
                 article_title=article_title,
                 keyword=keyword.split(',') if keyword else [],
                 category=category,
+                content=[],  # Required field, empty for HTML articles
                 content_html=html_content,  # Store HTML content
-                article_image=image_urls  # Store list of image URLs
+                article_image=image_data_list  # Store list of image data dicts
             )
 
             serializer = self.get_serializer(article)
