@@ -165,7 +165,7 @@ SIMPLE_JWT = {
 # session stored securely on server side (align with view.py 1-hour timeout)
 SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
 SESSION_COOKIE_AGE = 3600 # auto reset after 1 hour
-SESSION_SAVE_EVERY_REQUEST = True # update session on every request for accuracy
+SESSION_SAVE_EVERY_REQUEST = False # update session on every request for accuracy
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True # clear on browser close for security
 
 # cache settings (for potential future caching in views.py)

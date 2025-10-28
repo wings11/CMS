@@ -26,16 +26,16 @@ company_data = {
     'en': {
         'name': 'Civil Master Solution (CMS)',
         'specialty': 'construction and engineering solutions',
-        'services': ['design', 'supervision', 'testing', 'consultancy'],
-        'products': ['Industrial Flooring', 'Pavements', 'Precast Concrete', 'DUCTIL steel fibers', 'Armour Joints', 'DELTABEAM'],
+        'services': ['On-site supervision', 'consultation'],
+        'products': ['Steel Fiber', 'Micro Synthetic Fiber', 'Micro Steel Fibers', 'Armour Joints'],
         'note': 'You can only provide CMS information. Answer in 1-2 short sentences. If the question is not in the Q&A examples or the question is not related, please only ask company related questions and else if you do not know the details which are related to the company information, contact CMS via email cms@civilmastersolution.com.',
         'contact': 'Email cms@civilmastersolution.com.'
     },
     'th': {
         'name': 'Civil Master Solution (CMS)',
         'specialty': 'โซลูชันการก่อสร้างและวิศวกรรม',
-        'services': ['ออกแบบ', 'ดูแล', 'ทดสอบ', 'ให้คำปรึกษา'],
-        'products': ['พื้นอุตสาหกรรม', 'ทางเดิน', 'คอนกรีตสำเร็จรูป', 'เส้นใยเหล็ก DUCTIL', 'ข้อต่อ Armour', 'DELTABEAM'],
+        'services': ['การดูแลหน้างาน', 'การให้คำปรึกษา'],
+        'products': ['เส้นใยเหล็ก', 'เส้นใยสังเคราะห์ขนาดเล็ก', 'เส้นใยเหล็กขนาดเล็ก', 'ข้อต่อ Armour'],
         'note': 'คุณสามารถให้ข้อมูล CMS เท่านั้น ตอบใน 1-2 ประโยคสั้นๆ หากคำถามอยู่นอกหัวข้อหรือไม่รู้รายละเอียด ติดต่อ CMS ทางอีเมล cms@civilmastersolution.com หรือเยี่ยมชม www.civilmastersolution.com',
         'contact': 'ส่งอีเมลถึง cms@civilmastersolution.com หรือเยี่ยมชม www.civilmastersolution.com.'
     }
