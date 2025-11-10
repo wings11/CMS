@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
+import dj_database_url
 
 load_dotenv()
 
@@ -25,13 +26,25 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# SECRET_KEY = 'django-insecure-dzfm4u_u9hwz07nus$&_^y%z%#8@vnv*nw%7&p5!h=mod4=$$*'
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+SECRET_KEY = os.environ.get('SECRET_KEY', os.getenv('DJANGO_SECRET_KEY', 'django-insecure-fallback-key'))
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
+# Updated ALLOWED_HOSTS for Render
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '.onrender.com',  # Allow all Render subdomains
+]
+
+# Add custom domains from environment variable
+if os.environ.get('ALLOWED_HOSTS'):
+    ALLOWED_HOSTS.extend(os.environ.get('ALLOWED_HOSTS').split(','))
+
+# Add Render external hostname
+if os.environ.get('RENDER_EXTERNAL_HOSTNAME'):
+    ALLOWED_HOSTS.append(os.environ.get('RENDER_EXTERNAL_HOSTNAME'))
 
 
 # Application definition
@@ -53,6 +66,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Add WhiteNoise for static files
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -60,13 +74,20 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-CORS_ALLOW_ALL_ORIGINS = True
 
-# # For production, restrict CORS to your frontend domain(s) to prevent unauthorized access
-# CORS_ALLOWED_ORIGINS = [
-#     'https://yourfrontenddomain.com',  # Replace with your React app's domain
-#     'https://www.yourfrontenddomain.com',
-# ]  # Remove CORS_ALLOW_ALL_ORIGINS = True for security
+# CORS Configuration - Dynamic based on DEBUG
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    CORS_ALLOWED_ORIGINS = [
+        os.environ.get('FRONTEND_URL', ''),
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+    ]
+    # Remove empty strings
+    CORS_ALLOWED_ORIGINS = [origin for origin in CORS_ALLOWED_ORIGINS if origin]
+
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'CMSproject.urls'
 
@@ -91,16 +112,47 @@ WSGI_APPLICATION = 'CMSproject.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv("DB_NAME"),
-        'USER': os.getenv("DB_USER"),
-        'PASSWORD': os.getenv("DB_PASSWORD"),
-        'HOST': os.getenv("DB_HOST"),
-        'PORT': os.getenv("DB_PORT"),
+# Database Configuration - Prioritize DATABASE_URL for Render
+if os.environ.get('DATABASE_URL'):
+    # Use DATABASE_URL from Render PostgreSQL
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=True,
+        )
     }
-}
+    # Add SSL mode for secure connections
+    DATABASES['default']['OPTIONS'] = {
+        'sslmode': 'require',
+        'connect_timeout': 10,
+    }
+    
+elif os.getenv("DB_NAME") and os.getenv("DB_USER"):
+    # Use individual parameters (Supabase or local PostgreSQL)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv("DB_NAME"),
+            'USER': os.getenv("DB_USER"),
+            'PASSWORD': os.getenv("DB_PASSWORD"),
+            'HOST': os.getenv("DB_HOST", 'localhost'),
+            'PORT': os.getenv("DB_PORT", '5432'),
+            'OPTIONS': {
+                'sslmode': 'require' if 'supabase.co' in os.getenv("DB_HOST", '') else 'prefer',
+                'connect_timeout': 10,
+            }
+        }
+    }
+else:
+    # Fallback to SQLite for local development
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -127,7 +179,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Bangkok'  # Set to Bangkok timezone
 
 USE_I18N = True
 
@@ -137,7 +189,16 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Additional locations for static files
+STATICFILES_DIRS = []
+if os.path.exists(os.path.join(BASE_DIR, 'static')):
+    STATICFILES_DIRS.append(os.path.join(BASE_DIR, 'static'))
+
+# WhiteNoise configuration for serving static files efficiently
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files configuration
 MEDIA_URL = '/media/'
@@ -163,57 +224,121 @@ SIMPLE_JWT = {
 }
 
 # session stored securely on server side (align with view.py 1-hour timeout)
-SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+SESSION_ENGINE = "django.contrib.sessions.backends.db"  # Use database sessions for Render
 SESSION_COOKIE_AGE = 3600 # auto reset after 1 hour
-SESSION_SAVE_EVERY_REQUEST = False # update session on every request for accuracy
+SESSION_SAVE_EVERY_REQUEST = True # update session on every request for accuracy
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True # clear on browser close for security
 
-# cache settings (for potential future caching in views.py)
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', # in-memory cache (use Redis for production)
+# cache settings - Use Redis on Render, memory cache locally
+if os.environ.get('REDIS_URL'):
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': os.environ.get('REDIS_URL'),
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'SOCKET_CONNECT_TIMEOUT': 5,
+                'SOCKET_TIMEOUT': 5,
+                'CONNECTION_POOL_KWARGS': {'max_connections': 50},
+            },
+            'KEY_PREFIX': 'cms',
+            'TIMEOUT': 300,
+        }
     }
-}
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-snowflake',
+        }
+    }
 
 # logging for security monitoring
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
         'file': {
             'level': 'WARNING',
             'class': 'logging.FileHandler',
-            'filename': 'security_logs.txt',
+            'filename': os.path.join(BASE_DIR, 'logs', 'security.log'),
+            'formatter': 'verbose',
         }, 
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
     },
     'loggers': {
         'django': {
-            'handlers': ['file'],
-            'level': 'WARNING',
-            'propagate': True,
+            'handlers': ['console', 'file'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+            'propagate': False,
+        },
+        'chatbot': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'CMSapp': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
         },
     },
 }
 
-# Store sessions in browser
-SESSION_COOKIE_SECURE = False  # Requires HTTPS in production - change True for production
+# Create logs directory if it doesn't exist
+os.makedirs(os.path.join(BASE_DIR, 'logs'), exist_ok=True)
+
+# Security settings - Dynamic based on DEBUG
+SESSION_COOKIE_SECURE = not DEBUG  # True in production (HTTPS)
 SESSION_COOKIE_HTTPONLY = True  # Prevent JS access
 SESSION_COOKIE_SAMESITE = 'Lax'  # Balance security and usability
-CSRF_COOKIE_SECURE = False  # CSRF cookie over HTTPS only - change True for production
+CSRF_COOKIE_SECURE = not DEBUG  # True in production (HTTPS)
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = 'Lax'
 
-# HTTPS in production
-SECURE_SSL_REDIRECT = False  # Redirect HTTP to HTTPS (set False for local testing) - change True for production
-SECURE_HSTS_SECONDS = 0  # Local: 0 (disabled). Production: Set to 31536000 (1 year) for HTTP Strict Transport Security (prevents downgrade attacks).
-SECURE_HSTS_INCLUDE_SUBDOMAINS = False  # Local: False. Production: Set to True to include subdomains in HSTS.
-SECURE_HSTS_PRELOAD = False  # Local: False. Production: Set to True to allow preloading in browsers.
-SECURE_CONTENT_TYPE_NOSNIFF = True  # Local/Production: True (always safe; prevents MIME type sniffing attacks).
-SECURE_BROWSER_XSS_FILTER = True  # Local/Production: True (always safe; enables browser XSS filtering).
+# HTTPS/SSL Configuration for production
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+else:
+    SECURE_SSL_REDIRECT = False
+    SECURE_HSTS_SECONDS = 0
 
-# Email settings for auto-reply
+# Always-on security settings
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = 'DENY'
+
+# Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'  # Or your provider (e.g., 'smtp.mailgun.com')
-EMAIL_PORT = 587
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')  
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-DEFAULT_FROM_EMAIL = os.getenv('EMAIL_HOST_USER') 
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', os.getenv('EMAIL_HOST_USER'))  
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', os.getenv('EMAIL_HOST_PASSWORD'))
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
+ADMIN_ALERT_EMAIL = os.environ.get('ADMIN_ALERT_EMAIL', '')
+
+# Trusted origins for CSRF (for Render deployment)
+CSRF_TRUSTED_ORIGINS = []
+if not DEBUG:
+    if os.environ.get('RENDER_EXTERNAL_HOSTNAME'):
+        CSRF_TRUSTED_ORIGINS.append(f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME')}")
+    if os.environ.get('FRONTEND_URL'):
+        CSRF_TRUSTED_ORIGINS.append(os.environ.get('FRONTEND_URL')) 

@@ -1,0 +1,52 @@
+services:
+  - type: web
+    name: cms-backend
+    runtime: python
+    region: singapore
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn CMSproject.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120 --log-level info"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cms-postgres-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: cms-redis
+          type: redis
+          property: connectionString
+      - key: FRONTEND_URL
+        sync: false
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: ADMIN_ALERT_EMAIL
+        sync: false
+    healthCheckPath: /admin/login/
+    autoDeploy: true
+
+databases:
+  - name: cms-postgres-db
+    databaseName: cms_chatbot
+    user: cms_user
+    plan: free
+    region: singapore
+
+  - name: cms-redis
+    plan: free
+    region: singapore
+    maxmemoryPolicy: allkeys-lru
