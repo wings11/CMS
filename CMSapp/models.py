@@ -19,7 +19,6 @@ class Product(models.Model):
     main_application = models.JSONField(default=list)
     benefit = models.JSONField(default=list)
     performance = models.JSONField(default=list)
-    comments = models.TextField(null=True, blank=True)
     position = models.PositiveIntegerField(default=1, help_text="Display order position")
     def __str__(self):
         return self.product_name
