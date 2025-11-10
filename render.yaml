@@ -4,7 +4,7 @@ services:
     runtime: python
     region: singapore
     plan: free
-    buildCommand: "./build.sh"
+    buildCommand: "bash build.sh"
     startCommand: "gunicorn CMSproject.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120 --log-level info"
     envVars:
       - key: PYTHON_VERSION
