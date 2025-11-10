@@ -114,23 +114,17 @@ WSGI_APPLICATION = 'CMSproject.wsgi.application'
 
 # Database Configuration - Prioritize DATABASE_URL for Render
 if os.environ.get('DATABASE_URL'):
-    # Use DATABASE_URL from Render PostgreSQL
+    # Use DATABASE_URL from Render PostgreSQL (during build and runtime)
     DATABASES = {
         'default': dj_database_url.config(
             default=os.environ.get('DATABASE_URL'),
             conn_max_age=600,
             conn_health_checks=True,
-            ssl_require=True,
         )
     }
-    # Add SSL mode for secure connections
-    DATABASES['default']['OPTIONS'] = {
-        'sslmode': 'require',
-        'connect_timeout': 10,
-    }
     
-elif os.getenv("DB_NAME") and os.getenv("DB_USER"):
-    # Use individual parameters (Supabase or local PostgreSQL)
+elif os.getenv("DB_NAME") and os.getenv("DB_USER") and not os.environ.get('RENDER'):
+    # Use individual parameters ONLY in local development (not on Render)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
