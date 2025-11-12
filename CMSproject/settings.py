@@ -141,6 +141,7 @@ if os.getenv("DB_NAME") and os.getenv("DB_USER"):
             'OPTIONS': {
                 'sslmode': 'require' if 'supabase.co' in os.getenv("DB_HOST", '') else 'prefer',
                 'connect_timeout': 10,
+                'family': 2,  # Force IPv4 connections (AF_INET)
             }
         }
     }
