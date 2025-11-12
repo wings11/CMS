@@ -80,9 +80,19 @@ if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
 else:
     CORS_ALLOWED_ORIGINS = [
+        # Deployed frontend and admin URLs
+        'https://cms-testing-frontend.vercel.app',
+        'https://cms-testing-admin.vercel.app',
+        # Environment variable URLs
         os.environ.get('FRONTEND_URL', ''),
+        os.environ.get('ADMIN_URL', ''),
+        # Local development
         'http://localhost:3000',
         'http://127.0.0.1:3000',
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'http://localhost:5174',
+        'http://127.0.0.1:5174',
     ]
     # Remove empty strings
     CORS_ALLOWED_ORIGINS = [origin for origin in CORS_ALLOWED_ORIGINS if origin]
@@ -332,7 +342,16 @@ ADMIN_ALERT_EMAIL = os.environ.get('ADMIN_ALERT_EMAIL', '')
 # Trusted origins for CSRF (for Render deployment)
 CSRF_TRUSTED_ORIGINS = []
 if not DEBUG:
+    # Add deployed frontend and admin URLs
+    CSRF_TRUSTED_ORIGINS.extend([
+        'https://cms-testing-frontend.vercel.app',
+        'https://cms-testing-admin.vercel.app',
+    ])
+    # Add backend URL
     if os.environ.get('RENDER_EXTERNAL_HOSTNAME'):
         CSRF_TRUSTED_ORIGINS.append(f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME')}")
+    # Add from environment variables
     if os.environ.get('FRONTEND_URL'):
-        CSRF_TRUSTED_ORIGINS.append(os.environ.get('FRONTEND_URL')) 
+        CSRF_TRUSTED_ORIGINS.append(os.environ.get('FRONTEND_URL'))
+    if os.environ.get('ADMIN_URL'):
+        CSRF_TRUSTED_ORIGINS.append(os.environ.get('ADMIN_URL')) 
