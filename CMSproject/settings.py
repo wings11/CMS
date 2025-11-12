@@ -97,6 +97,11 @@ else:
     # Remove empty strings
     CORS_ALLOWED_ORIGINS = [origin for origin in CORS_ALLOWED_ORIGINS if origin]
 
+# Allow all Vercel preview deployments
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",  # Match all Vercel preview URLs
+]
+
 CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'CMSproject.urls'
@@ -354,4 +359,10 @@ if not DEBUG:
     if os.environ.get('FRONTEND_URL'):
         CSRF_TRUSTED_ORIGINS.append(os.environ.get('FRONTEND_URL'))
     if os.environ.get('ADMIN_URL'):
-        CSRF_TRUSTED_ORIGINS.append(os.environ.get('ADMIN_URL')) 
+        CSRF_TRUSTED_ORIGINS.append(os.environ.get('ADMIN_URL'))
+
+# Allow all Vercel preview deployments for CSRF
+import re
+CSRF_TRUSTED_ORIGINS_REGEX = [
+    re.compile(r"^https://.*\.vercel\.app$"),
+] 
