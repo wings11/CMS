@@ -127,19 +127,9 @@ WSGI_APPLICATION = 'CMSproject.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# Database Configuration - Prioritize DATABASE_URL for Render
-if os.environ.get('RENDER') and os.environ.get('DATABASE_URL'):
-    # On Render: ALWAYS use DATABASE_URL (ignore other DB vars)
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=os.environ.get('DATABASE_URL'),
-            conn_max_age=600,
-            conn_health_checks=True,
-        )
-    }
-    
-elif os.getenv("DB_NAME") and os.getenv("DB_USER") and not os.environ.get('RENDER'):
-    # Local development with individual DB parameters (NOT on Render)
+# Database Configuration - Use Supabase for all environments
+if os.getenv("DB_NAME") and os.getenv("DB_USER"):
+    # Always use Supabase database (for both local and production)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -155,7 +145,7 @@ elif os.getenv("DB_NAME") and os.getenv("DB_USER") and not os.environ.get('RENDE
         }
     }
 else:
-    # Fallback to SQLite for local development
+    # Fallback to SQLite for local development (if no Supabase vars)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
