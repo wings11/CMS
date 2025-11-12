@@ -19,8 +19,10 @@ django-redis==5.4.0
 
 # AI/ML for Chatbot
 google-generativeai==0.8.5
-sentence-transformers==5.1.2
-torch==2.5.1
+
+# Optional: Uncomment for semantic matching (requires ~1GB download)
+# sentence-transformers==5.1.2
+# torch==2.5.1
 
 # Utilities
 python-dotenv==1.0.0

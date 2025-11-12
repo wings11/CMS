@@ -3,11 +3,19 @@ import json
 import time
 import threading
 import logging
-import sentence_transformers
 from django.core.cache import cache
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
+
+# Optional: sentence-transformers for semantic matching
+# If not installed, will fall back to Gemini-only matching
+try:
+    import sentence_transformers
+    SENTENCE_TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    SENTENCE_TRANSFORMERS_AVAILABLE = False
+    logging.warning("sentence-transformers not available, using Gemini-only matching")
 import google.generativeai as genai
 
 logger = logging.getLogger(__name__)
@@ -271,25 +279,37 @@ def find_match(user_question, lang_qa):
         if pair.get('question', '').lower().strip() == user_question.lower().strip():
             return pair['answer']
     
-    # Semantic matching with sentence transformers
+    # Semantic matching with sentence transformers (if available)
+    if not SENTENCE_TRANSFORMERS_AVAILABLE:
+        # Skip semantic matching if not available
+        return None
+    
     best_match = None
     best_ratio = 0
     
     # Load model only once (lazy loading)
     if model is None:
-        model = sentence_transformers.SentenceTransformer('all-MiniLM-L6-v2')
+        try:
+            model = sentence_transformers.SentenceTransformer('all-MiniLM-L6-v2')
+        except Exception as e:
+            logging.error(f"Failed to load sentence transformer model: {e}")
+            return None
     
-    user_embedding = model.encode(user_question)
-    
-    for pair in lang_qa:
-        pair_embedding = model.encode(pair.get('question', ''))
-        similarity = sentence_transformers.util.cos_sim(user_embedding, pair_embedding).item()
+    try:
+        user_embedding = model.encode(user_question)
         
-        if similarity > best_ratio and similarity > 0.8:  # 80% similarity threshold
-            best_match = pair
-            best_ratio = similarity
-    
-    return best_match['answer'] if best_match else None
+        for pair in lang_qa:
+            pair_embedding = model.encode(pair.get('question', ''))
+            similarity = sentence_transformers.util.cos_sim(user_embedding, pair_embedding).item()
+            
+            if similarity > best_ratio and similarity > 0.8:  # 80% similarity threshold
+                best_match = pair
+                best_ratio = similarity
+        
+        return best_match['answer'] if best_match else None
+    except Exception as e:
+        logging.error(f"Semantic matching failed: {e}")
+        return None
 
 def generate_gemini_response(user_question, lang_qa, data_lang, lang, request):
     """Generate response using Gemini with dynamic system prompt"""
