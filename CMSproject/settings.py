@@ -128,8 +128,8 @@ WSGI_APPLICATION = 'CMSproject.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 # Database Configuration - Prioritize DATABASE_URL for Render
-if os.environ.get('DATABASE_URL'):
-    # Use DATABASE_URL from Render PostgreSQL (during build and runtime)
+if os.environ.get('RENDER') and os.environ.get('DATABASE_URL'):
+    # On Render: ALWAYS use DATABASE_URL (ignore other DB vars)
     DATABASES = {
         'default': dj_database_url.config(
             default=os.environ.get('DATABASE_URL'),
@@ -139,7 +139,7 @@ if os.environ.get('DATABASE_URL'):
     }
     
 elif os.getenv("DB_NAME") and os.getenv("DB_USER") and not os.environ.get('RENDER'):
-    # Use individual parameters ONLY in local development (not on Render)
+    # Local development with individual DB parameters (NOT on Render)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
