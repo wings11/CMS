@@ -273,4 +273,45 @@ class AdminLogViewSet(viewsets.ViewSet):
                 'total_lines': 0,
                 'alerts': []
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+
+
+# Temporary API endpoint to create superuser (REMOVE AFTER TESTING)
+from rest_framework.decorators import api_view
+from django.contrib.auth.models import User
+
+@api_view(['POST'])
+def create_superuser_api(request):
+    """
+    Temporary endpoint to create a superuser
+    POST /api/create-superuser/
+    Body: {"username": "admin", "email": "admin@example.com", "password": "password"}
+    """
+    try:
+        username = request.data.get('username')
+        email = request.data.get('email')
+        password = request.data.get('password')
+
+        if not all([username, email, password]):
+            return Response({
+                'error': 'Missing required fields: username, email, password'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        if User.objects.filter(username=username).exists():
+            return Response({
+                'message': f'User {username} already exists'
+            }, status=status.HTTP_200_OK)
+
+        User.objects.create_superuser(
+            username=username,
+            email=email,
+            password=password
+        )
+
+        return Response({
+            'message': f'Superuser {username} created successfully'
+        }, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        return Response({
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

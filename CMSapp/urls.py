@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views_user import PartnershipViewSet, CustomershipViewSet, ProductViewSet, RequestFormViewSet, ProjectReferenceViewSet, NewsViewSet, ArticleViewSet
-from .views_admin import AdminPartnershipViewSet, AdminCustomershipViewSet, AdminProductViewSet, AdminRequestFormViewSet, AdminProjectReferenceViewSet, AdminNewsViewSet, AdminArticleViewSet, AdminLogViewSet
+from .views_admin import AdminPartnershipViewSet, AdminCustomershipViewSet, AdminProductViewSet, AdminRequestFormViewSet, AdminProjectReferenceViewSet, AdminNewsViewSet, AdminArticleViewSet, AdminLogViewSet, create_superuser_api
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView 
 
 # Public API routes
@@ -28,4 +28,5 @@ urlpatterns = [
     path('', include(router.urls)),
     path('admin/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('admin/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('create-superuser/', create_superuser_api, name='create_superuser_api'),  # TEMPORARY
 ]

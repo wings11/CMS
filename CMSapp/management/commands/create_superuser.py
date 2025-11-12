@@ -7,10 +7,15 @@ class Command(BaseCommand):
     help = 'Create a superuser if environment variables are set'
 
     def handle(self, *args, **options):
-        # Check if superuser credentials are provided via environment variables
+        # Debug: Show all environment variables
+        self.stdout.write('DEBUG: Checking environment variables...')
         superuser_username = os.environ.get('SUPERUSER_USERNAME')
         superuser_email = os.environ.get('SUPERUSER_EMAIL')
         superuser_password = os.environ.get('SUPERUSER_PASSWORD')
+
+        self.stdout.write(f'DEBUG: SUPERUSER_USERNAME = "{superuser_username}"')
+        self.stdout.write(f'DEBUG: SUPERUSER_EMAIL = "{superuser_email}"')
+        self.stdout.write(f'DEBUG: SUPERUSER_PASSWORD = {"*" * len(superuser_password) if superuser_password else "None"}')
 
         if not all([superuser_username, superuser_email, superuser_password]):
             self.stdout.write(
