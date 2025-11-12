@@ -15,7 +15,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
 import dj_database_url
-import socket  # For IPv4 resolution
 
 load_dotenv()
 
@@ -128,38 +127,18 @@ WSGI_APPLICATION = 'CMSproject.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# Database Configuration - Use Supabase for all environments with IPv4 forced
-if os.getenv("DB_NAME") and os.getenv("DB_USER"):
-    # Always use Supabase database (for both local and production)
-    
-    # Resolve hostname to IPv4 address to force IPv4 connection
-    db_host = os.getenv("DB_HOST", 'localhost')
-    try:
-        # Get IPv4 address for the hostname
-        ipv4_addr = socket.getaddrinfo(db_host, int(os.getenv("DB_PORT", '5432')), socket.AF_INET)[0][4][0]
-        use_hostaddr = True
-    except (socket.gaierror, IndexError):
-        # Fallback to hostname if IPv4 resolution fails
-        ipv4_addr = db_host
-        use_hostaddr = False
-    
+# Database Configuration - Use Render PostgreSQL only
+if os.environ.get('DATABASE_URL'):
+    # Use Render's PostgreSQL (production and development)
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv("DB_NAME"),
-            'USER': os.getenv("DB_USER"),
-            'PASSWORD': os.getenv("DB_PASSWORD"),
-            'HOST': db_host,  # Keep original hostname for DNS
-            'PORT': os.getenv("DB_PORT", '5432'),
-            'OPTIONS': {
-                'sslmode': 'require' if 'supabase.co' in db_host else 'prefer',
-                'connect_timeout': 10,
-                **({'hostaddr': ipv4_addr} if use_hostaddr else {}),  # Force IPv4 if resolved
-            }
-        }
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
 else:
-    # Fallback to SQLite for local development (if no Supabase vars)
+    # Fallback to SQLite for local development (if no DATABASE_URL)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
