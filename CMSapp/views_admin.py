@@ -98,6 +98,12 @@ class AdminNewsViewSet(viewsets.ModelViewSet):
         
         data = request.data.copy()
         
+        # Log incoming data for debugging
+        logging.info(f"News creation request data keys: {data.keys()}")
+        logging.info(f"news_title: {data.get('news_title')}")
+        logging.info(f"content length: {len(data.get('content', ''))}")
+        logging.info(f"keyword raw: {data.get('keyword')}")
+        
         # Parse keyword if it's a JSON string
         if 'keyword' in data and isinstance(data['keyword'], str):
             try:
@@ -118,7 +124,10 @@ class AdminNewsViewSet(viewsets.ModelViewSet):
             data['title'] = data['news_title']
         
         serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            logging.error(f"News serializer validation errors: {serializer.errors}")
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
