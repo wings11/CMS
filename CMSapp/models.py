@@ -58,7 +58,7 @@ class News(models.Model):
     news_title = models.CharField(max_length=255, null=False, blank=False)
     news_image = models.JSONField(default=list)
     keyword = models.JSONField(null=True, blank=True, default=list)
-    content = models.JSONField(null=False, blank=False, default=list)
+    content = models.TextField(null=False, blank=False)  # Changed from JSONField to TextField for HTML
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     def __str__(self):
@@ -71,6 +71,7 @@ class Article(models.Model):
     content = models.JSONField(null=False, blank=False, default=list)
     content_html = models.TextField(null=True, blank=True)  # For Google Docs HTML content
     category = models.CharField(max_length=100, null=True, blank=True)
+    pdf_file = models.FileField(upload_to='articles/pdfs/', null=True, blank=True)  # PDF file field
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     def __str__(self):

@@ -88,14 +88,77 @@ class AdminProjectReferenceViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
 
 class AdminNewsViewSet(viewsets.ModelViewSet):
-    queryset = News.objects.all()
+    queryset = News.objects.all().order_by('-created_at')
     serializer_class = NewsSerializer
     permission_classes = [IsAdminUser]
+    
+    def create(self, request, *args, **kwargs):
+        """Handle news creation with proper form data parsing"""
+        data = request.data.copy()
+        
+        # Ensure title is set from news_title if not provided
+        if 'news_title' in data and 'title' not in data:
+            data['title'] = data['news_title']
+        
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    
+    def update(self, request, *args, **kwargs):
+        """Handle news update with proper form data parsing"""
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        data = request.data.copy()
+        
+        # Ensure title is set from news_title if not provided
+        if 'news_title' in data and 'title' not in data:
+            data['title'] = data['news_title']
+        
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        
+        return Response(serializer.data)
+
 
 class AdminArticleViewSet(viewsets.ModelViewSet):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
     permission_classes = [IsAdminUser]
+
+    def create(self, request, *args, **kwargs):
+        """Handle article creation with PDF file upload"""
+        data = request.data.copy()
+        
+        # Handle PDF file if provided
+        pdf_file = request.FILES.get('pdf_file')
+        if pdf_file:
+            data['pdf_file'] = pdf_file
+        
+        serializer = self.get_serializer(data=data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    
+    def update(self, request, *args, **kwargs):
+        """Handle article update with PDF file upload"""
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        data = request.data.copy()
+        
+        # Handle PDF file if provided
+        pdf_file = request.FILES.get('pdf_file')
+        if pdf_file:
+            data['pdf_file'] = pdf_file
+        
+        serializer = self.get_serializer(instance, data=data, partial=partial, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        
+        return Response(serializer.data)
 
     @action(detail=False, methods=['post'])
     def upload_article(self, request):
@@ -104,24 +167,22 @@ class AdminArticleViewSet(viewsets.ModelViewSet):
             # Get form data
             html_file = request.FILES.get('html_file')
             images = request.FILES.getlist('images')
+            pdf_file = request.FILES.get('pdf_file')  # Add PDF file support
             article_title = request.data.get('article_title')
             keyword = request.data.get('keyword')
             category = request.data.get('category')
 
-            print(f"Received data: html_file={html_file}, images={len(images)}, title={article_title}")
+            print(f"Received data: html_file={html_file}, images={len(images)}, pdf_file={pdf_file}, title={article_title}")
 
-            print(f"Received data: html_file={html_file}, images={len(images)}, title={article_title}")
-
-            if not html_file:
-                return Response({'error': 'HTML file is required'}, status=status.HTTP_400_BAD_REQUEST)
-            
             if not article_title:
                 return Response({'error': 'Article title is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Read HTML content
-            html_content = html_file.read().decode('utf-8')
-            print(f"HTML content length: {len(html_content)}")
-            print(f"HTML content length: {len(html_content)}")
+            # Initialize content variables
+            html_content = ""
+            if html_file:
+                # Read HTML content
+                html_content = html_file.read().decode('utf-8')
+                print(f"HTML content length: {len(html_content)}")
             
             # Process images and update HTML
             image_data_list = []
@@ -194,9 +255,10 @@ class AdminArticleViewSet(viewsets.ModelViewSet):
                     
                     return match.group(0)  # No replacement found
                 
-            # Replace all img src attributes
-            img_pattern = r'<img[^>]*src=["\']([^"\']+)["\'][^>]*>'
-            html_content = re.sub(img_pattern, replace_image_src, html_content, flags=re.IGNORECASE)
+                # Replace all img src attributes if HTML content exists
+                if html_content:
+                    img_pattern = r'<img[^>]*src=["\']([^"\']+)["\'][^>]*>'
+                    html_content = re.sub(img_pattern, replace_image_src, html_content, flags=re.IGNORECASE)
             
             # Create the article
             article = Article.objects.create(
@@ -207,8 +269,14 @@ class AdminArticleViewSet(viewsets.ModelViewSet):
                 content_html=html_content,  # Store HTML content
                 article_image=image_data_list  # Store list of image data dicts
             )
+            
+            # Handle PDF file upload separately
+            if pdf_file:
+                article.pdf_file = pdf_file
+                article.save()
 
-            serializer = self.get_serializer(article)
+            # Get serializer with request context for proper URL generation
+            serializer = self.get_serializer(article, context={'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
             
         except Exception as e:
