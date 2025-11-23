@@ -27,8 +27,9 @@ class ProjectReferenceSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class NewsSerializer(serializers.ModelSerializer):
-    image = serializers.ImageField(write_only=True, required=False)
-    keyword = serializers.JSONField(required=False)
+    image = serializers.ImageField(write_only=True, required=False, allow_null=True)
+    keyword = serializers.JSONField(required=False, allow_null=True)
+    news_image = serializers.JSONField(required=False, allow_null=True)
     
     class Meta:
         model = News
@@ -39,7 +40,7 @@ class NewsSerializer(serializers.ModelSerializer):
         """Handle keyword as either list or JSON string from FormData"""
         import json
         
-        if value is None:
+        if value is None or value == '':
             return []
         
         if isinstance(value, str):
@@ -49,7 +50,7 @@ class NewsSerializer(serializers.ModelSerializer):
                 if isinstance(parsed, list):
                     return parsed
                 return []
-            except (json.JSONDecodeError, ValueError):
+            except (json.JSONDecodeError, ValueError, TypeError):
                 # If not JSON, treat as comma-separated string
                 return [k.strip() for k in value.split(',') if k.strip()]
         
@@ -62,7 +63,7 @@ class NewsSerializer(serializers.ModelSerializer):
         """Handle news_image as either list or JSON string from FormData"""
         import json
         
-        if value is None:
+        if value is None or value == '':
             return []
         
         if isinstance(value, str):
@@ -70,7 +71,7 @@ class NewsSerializer(serializers.ModelSerializer):
                 parsed = json.loads(value)
                 if isinstance(parsed, list):
                     return parsed
-            except (json.JSONDecodeError, ValueError):
+            except (json.JSONDecodeError, ValueError, TypeError):
                 pass
         
         if isinstance(value, list):
@@ -78,16 +79,28 @@ class NewsSerializer(serializers.ModelSerializer):
         
         return []
     
+    def validate_content(self, value):
+        """Ensure content is not empty"""
+        if not value or (isinstance(value, str) and not value.strip()):
+            raise serializers.ValidationError("Content field cannot be empty.")
+        return value
+    
+    def validate_news_title(self, value):
+        """Ensure news_title is not empty"""
+        if not value or (isinstance(value, str) and not value.strip()):
+            raise serializers.ValidationError("News title cannot be empty.")
+        return value.strip() if isinstance(value, str) else value
+    
     def create(self, validated_data):
         # Handle image upload
         image = validated_data.pop('image', None)
         
         # Ensure keyword is a list
-        if 'keyword' not in validated_data or validated_data['keyword'] is None:
+        if 'keyword' not in validated_data or validated_data.get('keyword') is None:
             validated_data['keyword'] = []
         
         # Ensure news_image is a list
-        if 'news_image' not in validated_data or validated_data['news_image'] is None:
+        if 'news_image' not in validated_data or validated_data.get('news_image') is None:
             validated_data['news_image'] = []
         
         # Create the news instance
@@ -146,6 +159,10 @@ class NewsSerializer(serializers.ModelSerializer):
         # Ensure news_image is always a list
         if not isinstance(data.get('news_image'), list):
             data['news_image'] = []
+        
+        # Ensure keyword is always a list
+        if not isinstance(data.get('keyword'), list):
+            data['keyword'] = []
         
         # Map fields to match frontend expectations
         data['title'] = data.get('news_title')
