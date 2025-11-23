@@ -28,15 +28,67 @@ class ProjectReferenceSerializer(serializers.ModelSerializer):
 
 class NewsSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(write_only=True, required=False)
+    keyword = serializers.JSONField(required=False)
     
     class Meta:
         model = News
         fields = '__all__'
         read_only_fields = ('created_at', 'updated_at')
     
+    def validate_keyword(self, value):
+        """Handle keyword as either list or JSON string from FormData"""
+        import json
+        
+        if value is None:
+            return []
+        
+        if isinstance(value, str):
+            try:
+                # Try to parse as JSON string
+                parsed = json.loads(value)
+                if isinstance(parsed, list):
+                    return parsed
+                return []
+            except (json.JSONDecodeError, ValueError):
+                # If not JSON, treat as comma-separated string
+                return [k.strip() for k in value.split(',') if k.strip()]
+        
+        if isinstance(value, list):
+            return value
+        
+        return []
+    
+    def validate_news_image(self, value):
+        """Handle news_image as either list or JSON string from FormData"""
+        import json
+        
+        if value is None:
+            return []
+        
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+                if isinstance(parsed, list):
+                    return parsed
+            except (json.JSONDecodeError, ValueError):
+                pass
+        
+        if isinstance(value, list):
+            return value
+        
+        return []
+    
     def create(self, validated_data):
         # Handle image upload
         image = validated_data.pop('image', None)
+        
+        # Ensure keyword is a list
+        if 'keyword' not in validated_data or validated_data['keyword'] is None:
+            validated_data['keyword'] = []
+        
+        # Ensure news_image is a list
+        if 'news_image' not in validated_data or validated_data['news_image'] is None:
+            validated_data['news_image'] = []
         
         # Create the news instance
         news = News.objects.create(**validated_data)

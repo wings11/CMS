@@ -94,7 +94,24 @@ class AdminNewsViewSet(viewsets.ModelViewSet):
     
     def create(self, request, *args, **kwargs):
         """Handle news creation with proper form data parsing"""
+        import json
+        
         data = request.data.copy()
+        
+        # Parse keyword if it's a JSON string
+        if 'keyword' in data and isinstance(data['keyword'], str):
+            try:
+                data['keyword'] = json.loads(data['keyword'])
+            except (json.JSONDecodeError, ValueError):
+                # If not JSON, split by comma
+                data['keyword'] = [k.strip() for k in data['keyword'].split(',') if k.strip()]
+        
+        # Parse news_image if it's a JSON string
+        if 'news_image' in data and isinstance(data['news_image'], str):
+            try:
+                data['news_image'] = json.loads(data['news_image'])
+            except (json.JSONDecodeError, ValueError):
+                data['news_image'] = []
         
         # Ensure title is set from news_title if not provided
         if 'news_title' in data and 'title' not in data:
@@ -108,9 +125,26 @@ class AdminNewsViewSet(viewsets.ModelViewSet):
     
     def update(self, request, *args, **kwargs):
         """Handle news update with proper form data parsing"""
+        import json
+        
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         data = request.data.copy()
+        
+        # Parse keyword if it's a JSON string
+        if 'keyword' in data and isinstance(data['keyword'], str):
+            try:
+                data['keyword'] = json.loads(data['keyword'])
+            except (json.JSONDecodeError, ValueError):
+                # If not JSON, split by comma
+                data['keyword'] = [k.strip() for k in data['keyword'].split(',') if k.strip()]
+        
+        # Parse news_image if it's a JSON string
+        if 'news_image' in data and isinstance(data['news_image'], str):
+            try:
+                data['news_image'] = json.loads(data['news_image'])
+            except (json.JSONDecodeError, ValueError):
+                data['news_image'] = []
         
         # Ensure title is set from news_title if not provided
         if 'news_title' in data and 'title' not in data:
