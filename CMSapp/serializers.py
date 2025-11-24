@@ -157,15 +157,21 @@ class NewsSerializer(serializers.ModelSerializer):
         return instance
     
     def to_representation(self, instance):
-        """Customize the representation to ensure news_image data is properly formatted."""
+        """Customize the representation to ensure news_image and keyword data is properly formatted."""
         data = super().to_representation(instance)
         
         # Ensure news_image is always a list
         if not isinstance(data.get('news_image'), list):
             data['news_image'] = []
         
-        # Ensure keyword is always a list
-        if not isinstance(data.get('keyword'), list):
+        # Ensure keyword is always a list (convert from DB if needed)
+        keyword_value = instance.keyword if hasattr(instance, 'keyword') else data.get('keyword')
+        if isinstance(keyword_value, list):
+            data['keyword'] = keyword_value
+        elif isinstance(keyword_value, str):
+            # If somehow stored as string, convert it
+            data['keyword'] = [k.strip() for k in keyword_value.split(',') if k.strip()]
+        else:
             data['keyword'] = []
         
         # Map fields to match frontend expectations
