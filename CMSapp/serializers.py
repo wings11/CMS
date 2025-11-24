@@ -48,14 +48,16 @@ class NewsSerializer(serializers.ModelSerializer):
                 # Try to parse as JSON string
                 parsed = json.loads(value)
                 if isinstance(parsed, list):
-                    return parsed
+                    # Filter out empty strings from parsed list
+                    return [k.strip() for k in parsed if k and str(k).strip()]
                 return []
             except (json.JSONDecodeError, ValueError, TypeError):
                 # If not JSON, treat as comma-separated string
                 return [k.strip() for k in value.split(',') if k.strip()]
         
         if isinstance(value, list):
-            return value
+            # Filter out empty strings from list
+            return [k.strip() for k in value if k and str(k).strip()]
         
         return []
     
