@@ -28,7 +28,7 @@ class ProjectReferenceSerializer(serializers.ModelSerializer):
 
 class NewsSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(write_only=True, required=False, allow_null=True)
-    keyword = serializers.JSONField(required=False, allow_null=True)
+    keyword = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     news_image = serializers.JSONField(required=False, allow_null=True)
     
     class Meta:
