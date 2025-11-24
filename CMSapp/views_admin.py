@@ -93,37 +93,8 @@ class AdminNewsViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminUser]
     
     def create(self, request, *args, **kwargs):
-        """Handle news creation with proper form data parsing"""
-        import json
-        
-        data = request.data.copy()
-        
-        # Log incoming data for debugging
-        logging.info(f"News creation request data keys: {data.keys()}")
-        logging.info(f"news_title: {data.get('news_title')}")
-        logging.info(f"content length: {len(data.get('content', ''))}")
-        logging.info(f"keyword raw: {data.get('keyword')}")
-        
-        # Parse keyword if it's a JSON string
-        if 'keyword' in data and isinstance(data['keyword'], str):
-            try:
-                data['keyword'] = json.loads(data['keyword'])
-            except (json.JSONDecodeError, ValueError):
-                # If not JSON, split by comma
-                data['keyword'] = [k.strip() for k in data['keyword'].split(',') if k.strip()]
-        
-        # Parse news_image if it's a JSON string
-        if 'news_image' in data and isinstance(data['news_image'], str):
-            try:
-                data['news_image'] = json.loads(data['news_image'])
-            except (json.JSONDecodeError, ValueError):
-                data['news_image'] = []
-        
-        # Ensure title is set from news_title if not provided
-        if 'news_title' in data and 'title' not in data:
-            data['title'] = data['news_title']
-        
-        serializer = self.get_serializer(data=data)
+        """Handle news creation - serializer handles all parsing"""
+        serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
             logging.error(f"News serializer validation errors: {serializer.errors}")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -133,33 +104,11 @@ class AdminNewsViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
     
     def update(self, request, *args, **kwargs):
-        """Handle news update with proper form data parsing"""
-        import json
-        
+        """Handle news update - serializer handles all parsing"""
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        data = request.data.copy()
         
-        # Parse keyword if it's a JSON string
-        if 'keyword' in data and isinstance(data['keyword'], str):
-            try:
-                data['keyword'] = json.loads(data['keyword'])
-            except (json.JSONDecodeError, ValueError):
-                # If not JSON, split by comma
-                data['keyword'] = [k.strip() for k in data['keyword'].split(',') if k.strip()]
-        
-        # Parse news_image if it's a JSON string
-        if 'news_image' in data and isinstance(data['news_image'], str):
-            try:
-                data['news_image'] = json.loads(data['news_image'])
-            except (json.JSONDecodeError, ValueError):
-                data['news_image'] = []
-        
-        # Ensure title is set from news_title if not provided
-        if 'news_title' in data and 'title' not in data:
-            data['title'] = data['news_title']
-        
-        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         
