@@ -39,6 +39,7 @@ class NewsSerializer(serializers.ModelSerializer):
     def validate_keyword(self, value):
         """Handle keyword as either list or JSON string from FormData"""
         import json
+        import re
         
         if value is None or value == '':
             return []
@@ -52,8 +53,9 @@ class NewsSerializer(serializers.ModelSerializer):
                     return [k.strip() for k in parsed if k and str(k).strip()]
                 return []
             except (json.JSONDecodeError, ValueError, TypeError):
-                # If not JSON, treat as comma-separated string
-                return [k.strip() for k in value.split(',') if k.strip()]
+                # If not JSON, split by comma, semicolon, or pipe and filter empty strings
+                keywords = re.split(r'[,;|]', value)
+                return [k.strip() for k in keywords if k.strip()]
         
         if isinstance(value, list):
             # Filter out empty strings from list
