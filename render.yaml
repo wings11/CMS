@@ -45,7 +45,7 @@ services:
     region: singapore
     maxmemoryPolicy: allkeys-lru
     ipAllowList:
-      - cidrBlock: 0.0.0.0/0
+      - source: any
         description: Allow connections from all services
 
 databases:
