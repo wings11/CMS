@@ -44,6 +44,9 @@ services:
     plan: free
     region: singapore
     maxmemoryPolicy: allkeys-lru
+    ipAllowList:
+      - cidrBlock: 0.0.0.0/0
+        description: Allow connections from all services
 
 databases:
   - name: cms-postgres-db
