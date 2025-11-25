@@ -1,0 +1,31 @@
+# Git and local artifacts
+.git
+.gitignore
+README.md
+*.md
+
+# Python cache and build files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.log
+*.pot
+*.pyproj
+
+# Virtual environments
+venv/
+.env/
+.env.dev
+.env.prod
+.env.local
+
+# Tooling
+.idea/
+.vscode/
+.DS_Store
+coverage/
+htmlcov/
+pytest_cache/
+.mypy_cache/

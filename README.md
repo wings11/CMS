@@ -126,6 +126,42 @@ python manage.py runserver
 
 ---
 
+## Docker Local Testing
+
+1. Duplicate `.env.docker.example` as `.env.docker` and fill in every secret. Copy the values you already have in `.env`, but remember to add the missing keys (`SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, `DATABASE_URL`, `REDIS_URL`, `SUPERUSER_*`, `FRONTEND_URL`, `ADMIN_URL`, `EMAIL_*`). If you prefer to reuse Supabase, set `DATABASE_URL=postgresql://<user>:<pass>@<host>:5432/<db>?sslmode=require` instead of the local Compose connection string.
+2. Build the image (only needed the first time or after dependency changes):
+
+  ```bash
+  docker compose build web
+  ```
+
+3. Start the stack and watch the logs (defaults to Supabase/remote DB if `DATABASE_URL` points there):
+
+  ```bash
+  docker compose up -d
+  docker compose logs -f web
+  ```
+
+  The `docker-entrypoint.sh` script automatically runs migrations and the custom `create_superuser` command on boot. Set `SUPERUSER_USERNAME`, `SUPERUSER_EMAIL`, and `SUPERUSER_PASSWORD` in `.env.docker` if you want the admin user to be created automatically; otherwise the command just prints a warning and skips the step.
+
+  Need the bundled Postgres container instead of Supabase? Start it with the `local-db` profile: `docker compose --profile local-db up -d postgres web redis`.
+
+4. Visit `http://localhost:8000/admin/` to confirm the service is up. API routes use the same hostname/port (e.g., `http://localhost:8000/api/products/`).
+
+5. Tear everything down when finished:
+
+  ```bash
+  docker compose down
+  ```
+
+### Useful variations
+
+* **Rebuild after code changes:** `docker compose up -d --build`
+* **Run a one-off Django command:** `docker compose run --rm web python manage.py shell`
+* **Connect to the Postgres shell:** `docker compose exec postgres psql -U cms_admin -d cms_backend`
+
+---
+
 ## API Endpoints
 
 | Function            | Endpoint                    | Method |
