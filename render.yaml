@@ -45,7 +45,7 @@ services:
     region: singapore
     maxmemoryPolicy: allkeys-lru
     ipAllowList:
-      - source: any
+      - source: 0.0.0.0/0
         description: Allow connections from all services
 
 databases:
