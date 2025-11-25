@@ -39,14 +39,15 @@ services:
     healthCheckPath: /admin/login/
     autoDeploy: true
 
+  - type: redis
+    name: cms-redis
+    plan: free
+    region: singapore
+    maxmemoryPolicy: allkeys-lru
+
 databases:
   - name: cms-postgres-db
     databaseName: cms_chatbot
     user: cms_user
     plan: free
     region: singapore
-
-  - name: cms-redis
-    plan: free
-    region: singapore
-    maxmemoryPolicy: allkeys-lru
